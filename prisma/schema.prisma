@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model EFMigrationsHistory {
+  MigrationId    String @id(map: "PK___EFMigrationsHistory") @db.NVarChar(150)
+  ProductVersion String @db.NVarChar(32)
+
+  @@map("__EFMigrationsHistory")
+}
+
+model MigrationHistory {
+  MigrationId    String @db.NVarChar(150)
+  ContextKey     String @db.NVarChar(300)
+  Model          Bytes
+  ProductVersion String @db.NVarChar(32)
+
+  @@id([MigrationId, ContextKey], map: "PK_dbo.__MigrationHistory")
+  @@map("__MigrationHistory")
+}
+
+model Course {
+  Id                     Int                      @id(map: "PK_dbo.Course") @default(autoincrement())
+  Guid                   String                   @db.UniqueIdentifier
+  ExternalId             Int?
+  Version                Int?
+  State                  Int?
+  HasJournal             Boolean?
+  Name                   String                   @db.NVarChar(Max)
+  Created                DateTime?
+  Thumbnail              String?                  @db.NVarChar(Max)
+  Ingress                String?                  @db.NVarChar(Max)
+  Information            String?                  @db.NVarChar(Max)
+  CategoryType           Int?
+  CertificateType        Int?
+  CertificateTemplate    String?                  @db.NVarChar(Max)
+  SummaryContent         String?                  @db.NVarChar(Max)
+  Hours                  Int?
+  Price                  Int?
+  PaymentPosition        Int?
+  PaymentChapterNumber   Int?
+  PaymentPageNumber      Int?
+  CreatedBy              String?                  @db.NVarChar(Max)
+  HTMLMeta               String?                  @db.NVarChar(Max)
+  CourseCategoryId       Int
+  LastModified           DateTime?
+  ApprovedDate           DateTime?
+  ApprovedText           String?                  @db.NVarChar(Max)
+  CourseCategory         CourseCategory           @relation(fields: [CourseCategoryId], references: [Id], onUpdate: NoAction, map: "FK_Course_CourseCategory_CourseCategoryId")
+  CourseChapter          CourseChapter[]
+  CourseResourceRelation CourseResourceRelation[]
+  History                History[]
+  Session                Session[]
+
+  @@index([CourseCategoryId], map: "IX_Course_CourseCategoryId")
+  @@index([Guid], map: "IX_Course_Guid")
+}
+
+model CourseAlternative {
+  Id           Int         @id(map: "PK_dbo.CourseAlternative") @default(autoincrement())
+  Text         String      @db.NVarChar(Max)
+  Response     String      @db.NVarChar(Max)
+  Points       Int?
+  CoursePageId Int?
+  CreatedBy    String?     @db.NVarChar(Max)
+  Number       Int         @default(0, map: "DF__CourseAlt__Numbe__3B40CD36")
+  CoursePage   CoursePage? @relation(fields: [CoursePageId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbo.CourseAlternative_dbo.CoursePage_CoursePageId")
+  History      History[]
+
+  @@index([CoursePageId], map: "IX_CoursePageId")
+}
+
+model CourseCategory {
+  Id                   Int              @id(map: "PK_dbo.CourseCategory") @default(autoincrement())
+  Guid                 String?          @db.UniqueIdentifier
+  Name                 String           @db.NVarChar(Max)
+  ParentId             Int?
+  CreatedBy            String?          @db.NVarChar(Max)
+  CourseCategory       CourseCategory?  @relation("CourseCategoryToCourseCategory_ParentId", fields: [ParentId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_dbo.CourseCategory_dbo.CourseCategory_ParentId")
+  Course               Course[]
+  other_CourseCategory CourseCategory[] @relation("CourseCategoryToCourseCategory_ParentId")
+
+  @@index([ParentId], map: "IX_ParentId")
+}
+
+model CourseChapter {
+  Id            Int          @id(map: "PK_dbo.CourseChapter") @default(autoincrement())
+  Number        Int
+  Name          String       @db.NVarChar(Max)
+  PercentToPass Int          @default(0, map: "DF__CourseCha__Perce__151B244E")
+  MaximumScore  Int?
+  ChapterType   Int?
+  CourseId      Int
+  CreatedBy     String?      @db.NVarChar(Max)
+  Course        Course       @relation(fields: [CourseId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbo.CourseChapter_dbo.Course_CourseId")
+  CoursePage    CoursePage[]
+  History       History[]
+
+  @@index([CourseId], map: "IX_CourseId")
+}
+
+model CoursePage {
+  Id                      Int                 @id(map: "PK_dbo.CoursePage") @default(autoincrement())
+  Number                  Int?
+  PageType                Int
+  Content                 String?             @db.NVarChar(Max)
+  Response                String?             @db.NVarChar(Max)
+  Question                String?             @db.NVarChar(Max)
+  Repeat                  Int?
+  ExcludeFromTest         Boolean
+  MaximumScore            Int?
+  CourseChapterId         Int
+  CreatedBy               String?             @db.NVarChar(Max)
+  OrderAlternativesRandom Boolean             @default(true, map: "DF__CoursePag__Order__3A4CA8FD")
+  CourseChapter           CourseChapter       @relation(fields: [CourseChapterId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbo.CoursePage_dbo.CourseChapter_CourseChapterId")
+  CourseAlternative       CourseAlternative[]
+  History                 History[]
+
+  @@index([CourseChapterId], map: "IX_CourseChapterId")
+}
+
+model CourseResourceRelation {
+  CourseId   Int
+  ResourceId Int
+  Id         Int      @id(map: "PK_CourseResourceRelation") @default(autoincrement())
+  Course     Course   @relation(fields: [CourseId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_CourseResourceRelation_Course_CourseId")
+  Resource   Resource @relation(fields: [ResourceId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_CourseResourceRelation_Resource_ResourceId")
+
+  @@index([CourseId], map: "IX_CourseResourceRelation_CourseId")
+  @@index([ResourceId], map: "IX_CourseResourceRelation_ResourceId")
+}
+
+model CronAction {
+  Id        Int      @id(map: "PK_dbo.CronAction") @default(autoincrement())
+  Name      String?  @db.NVarChar(Max)
+  Intervall Int
+  IsActive  Boolean
+  LastRun   DateTime @db.DateTime
+  Created   DateTime @db.DateTime
+}
+
+model CronEvent {
+  Id          Int      @id(map: "PK_dbo.CronEvent") @default(autoincrement())
+  TargetId    Int?
+  Event       String?  @db.NVarChar(Max)
+  Description String?  @db.NVarChar(Max)
+  Created     DateTime @db.DateTime
+}
+
+model Exam {
+  Id            Int       @id(map: "PK_dbo.Exam") @default(autoincrement())
+  SessionId     Int
+  CourseId      Int
+  CustomerId    Int
+  Name          String    @db.NVarChar(Max)
+  Started       DateTime  @db.DateTime
+  Finished      DateTime? @db.DateTime
+  ScoreMax      Int
+  ScoreRequired Int
+  Score         Int
+  JsonContent   String?   @db.NVarChar(Max)
+}
+
+model History {
+  Id                  Int                @id(map: "PK_History") @default(autoincrement())
+  Table               Int
+  ModifiedBy          String?            @db.NVarChar(Max)
+  Modified            DateTime
+  Changes             String?            @db.NVarChar(Max)
+  ValueBefore         String?            @db.NVarChar(Max)
+  ValueAfter          String?            @db.NVarChar(Max)
+  CourseAlternativeId Int?
+  CourseChapterId     Int?
+  CourseId            Int?
+  CoursePageId        Int?
+  ResourceId          Int?
+  TopLevelCourseId    Int?
+  CourseAlternative   CourseAlternative? @relation(fields: [CourseAlternativeId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_History_CourseAlternative_CourseAlternativeId")
+  CourseChapter       CourseChapter?     @relation(fields: [CourseChapterId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_History_CourseChapter_CourseChapterId")
+  Course              Course?            @relation(fields: [CourseId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_History_Course_CourseId")
+  CoursePage          CoursePage?        @relation(fields: [CoursePageId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_History_CoursePage_CoursePageId")
+  Resource            Resource?          @relation(fields: [ResourceId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_History_Resource_ResourceId")
+
+  @@index([CourseAlternativeId], map: "IX_History_CourseAlternativeId")
+  @@index([CourseChapterId], map: "IX_History_CourseChapter")
+  @@index([CourseId], map: "IX_History_CourseId")
+  @@index([CoursePageId], map: "IX_History_CoursePageId")
+  @@index([ResourceId], map: "IX_History_ResourceId")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model idxBefore {
+  object_id                              Int
+  ObjectSchema                           String? @db.NVarChar(128)
+  ObjectName                             String? @db.NVarChar(128)
+  IndexName                              String? @db.NVarChar(128)
+  type                                   Int?    @db.TinyInt
+  type_desc                              String? @db.NVarChar(60)
+  avg_fragmentation_in_percent           Float?
+  page_count                             BigInt?
+  index_id                               Int?
+  partition_number                       Int?
+  avg_page_space_used_in_percent         Float?
+  record_count                           BigInt?
+  ghost_record_count                     BigInt?
+  forwarded_record_count                 BigInt?
+  OnlineOpIsNotSupported                 Int?
+  ObjectDoesNotSupportResumableOperation Int?
+  SkipIndex                              Int
+  SkipReason                             String? @db.VarChar(128)
+
+  @@ignore
+}
+
+model Resource {
+  Id                     Int                      @id(map: "PK_dbo.CourseChapterResource") @default(autoincrement())
+  Name                   String                   @db.NVarChar(Max)
+  Url                    String                   @db.NVarChar(Max)
+  CreatedBy              String?                  @db.NVarChar(Max)
+  CourseResourceRelation CourseResourceRelation[]
+  History                History[]
+}
+
+model Session {
+  Id                Int             @id(map: "PK_dbo.Session") @default(autoincrement())
+  Guid              String          @db.UniqueIdentifier
+  HasJournal        Boolean
+  ChapterNumber     Int
+  PageNumber        Int
+  CustomerId        Int
+  CustomerUsername  String?         @db.NVarChar(Max)
+  CustomerName      String?         @db.NVarChar(Max)
+  Started           DateTime        @db.DateTime
+  Finished          DateTime?       @db.DateTime
+  CompressDate      DateTime?       @db.DateTime
+  Compressed        DateTime?       @db.DateTime
+  Name              String          @db.NVarChar(Max)
+  Price             Int
+  CourseGuid        String          @db.UniqueIdentifier
+  CourseId          Int
+  PaymentType       Int?
+  PaymentReference  String?         @db.NVarChar(64)
+  PaymentDate       DateTime?       @db.DateTime
+  ExamIsLocked      Boolean
+  ExamPassed        DateTime?       @db.DateTime
+  CompressedAnswers String?         @db.NVarChar(Max)
+  DiscountCode      String?         @db.NVarChar(Max)
+  DiscountCodeUsed  DateTime?       @db.DateTime
+  Course            Course          @relation(fields: [CourseId], references: [Id], onUpdate: NoAction, map: "FK_dbo.Session_dbo.Course_CourseId")
+  SessionAnswer     SessionAnswer[]
+
+  @@index([CourseId], map: "IX_CourseId")
+  @@index([Guid], map: "IX_Guid")
+  @@index([PaymentReference], map: "IX_PaymentReference")
+  @@index([CustomerId], map: "IX_Session_CustomerId")
+  @@index([Started], map: "IX_Started")
+}
+
+model SessionAnswer {
+  Id            Int      @id(map: "PK_dbo.SessionAnswer") @default(autoincrement())
+  ChapterNumber Int
+  PageNumber    Int
+  Answer        String   @db.NVarChar(Max)
+  Score         Int
+  Created       DateTime @db.DateTime
+  SessionId     Int
+  Session       Session  @relation(fields: [SessionId], references: [Id], onUpdate: NoAction, map: "FK_dbo.SessionAnswer_dbo.Session_SessionId")
+
+  @@index([Created], map: "IX_Created")
+  @@index([SessionId], map: "IX_SessionId")
+}
+
+model SessionEvent {
+  Id        Int      @id(map: "PK_dbo.SessionEvent") @default(autoincrement())
+  SessionId Int
+  EventType Int
+  Contents  String?  @db.NVarChar(Max)
+  Sent      DateTime @db.DateTime
+}
+
+model SessionMigration {
+  Id            Int       @id(map: "PK_dbo.SessionMigration") @default(autoincrement())
+  OldId         Int
+  NewId         Int
+  ChapterNumber Int
+  PageNumber    Int
+  Started       DateTime  @db.DateTime
+  Finished      DateTime? @db.DateTime
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model statsBefore {
+  ObjectSchema         String?   @db.NVarChar(128)
+  ObjectName           String?   @db.NVarChar(128)
+  object_id            Int
+  stats_id             Int
+  StatsName            String?   @db.NVarChar(128)
+  last_updated         DateTime?
+  rows                 BigInt?
+  rows_sampled         BigInt?
+  modification_counter BigInt?
+  type                 Int?      @db.TinyInt
+  type_desc            String?   @db.NVarChar(60)
+  SkipStatistics       Int
+
+  @@ignore
+}
+
+model Translation {
+  Id       Int      @id(map: "PK_dbo.Translation") @default(autoincrement())
+  Language Int
+  Name     String   @db.NVarChar(Max)
+  Value    String   @db.NVarChar(Max)
+  Context  String   @db.NVarChar(Max)
+  Created  DateTime @db.DateTime
+}
