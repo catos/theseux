@@ -18,7 +18,7 @@ export default async function handle(
   console.log("Request!", req.method, id)
 
   switch (req.method) {
-    case "PUT":
+    case "POST":
       await update(req.body)
       break
     default:

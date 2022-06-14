@@ -7,7 +7,7 @@ interface IProps {
 
 export default function Layout({ children }: IProps) {
   return (
-    <div>
+    <div className="container mx-auto">
       <header>
         <nav>
           <ul>

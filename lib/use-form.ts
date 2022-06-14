@@ -11,6 +11,7 @@ export type ChangeEventType = HTMLInputElement | { name?: string; value: any }
 function useForm<T>(initialValues: T | undefined, onSubmit: OnSubmitType) {
   const [values, setValues] = React.useState<T | undefined>(initialValues)
   const [errors] = React.useState({})
+  const [isLoading, setIsLoading] = React.useState(false)
 
   // TODO: why telerik !?!? const formRendered = React.useRef(true)
   React.useEffect(() => {
@@ -24,8 +25,14 @@ function useForm<T>(initialValues: T | undefined, onSubmit: OnSubmitType) {
       event.preventDefault()
     }
 
+    setIsLoading(true)
+    console.log("setIsLoading(true)");
+    
     // TODO: support validation ?
     onSubmit(values, errors)
+    
+    setIsLoading(false)
+    console.log("setIsLoading(false)");
   }
 
   const handleChange = (event: React.ChangeEvent<ChangeEventType>) => {
@@ -43,6 +50,7 @@ function useForm<T>(initialValues: T | undefined, onSubmit: OnSubmitType) {
     setValues,
     handleSubmit,
     handleChange,
+    isLoading
   }
 }
 
