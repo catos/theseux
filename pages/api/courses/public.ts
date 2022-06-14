@@ -21,19 +21,6 @@ export default async function handle(
   //   }
   // })
 
-  // DISTINCT
-  // const courses = await prisma.course.findMany({
-  //   where: {
-  //     CategoryType: 1
-  //   },
-  //   distinct: ['Guid'],
-  //   select: {
-  //     Id: true,
-  //     Guid: true,
-  //     Name: true
-  //   },
-  // })
-
   const courses = await prisma.course.findMany({
     where: {
       CategoryType: 1,
